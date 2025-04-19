@@ -37,8 +37,9 @@ local env = getfenv()
 function PROTOSMASHER_LOADED() return syn.is_Beta end -- or return true;
 
 function is_syn_function(func) -- needed for whatever
-	return type(func) == 'function' or syn.is_Beta
+   if getrenv or env.getrenv then if getrenv()[func] then return true else return false end end
 end
+
 is_synapse_function = is_syn_function
 function syn_isbeta() return syn.is_Beta end
 
@@ -79,12 +80,13 @@ end
 
 function syn.request(options: table)
 	local hwid
-	if gethwid then hwid = gethwid() else hwid = string.char(math.random(32, 64)) end
+	if gethwid then hwid = gethwid() else hwid = string.char(math.random(32, 64)) or game:GetService("RbxAnalyticsService"):GetClientId() end
 	local user = tostring(game:GetService("Players").LocalPlayer.Name) or tostring(game:GetService("Players").LocalPlayer.DisplayName)
 	if env.request or request then
-		options['Syn-Fingerprint'] = hwid
-		options['Syn-User-Identifier'] = user
-		options['User-Agent'] = 'user-agent: synx/v2.1.3b'
+		options["Syn-Fingerprint"] = hwid
+		options["Syn-User-Identifier"] = user
+		local success = select(1, pcall(function() options.Header = {["User-Agent"] = "synx v2.1.3b"} end))
+		if not success then local l__ = setmetatable({}, {metatable = 'locked'}) l__ = nil end
 		return (env.request or request)(options)
 	end
 	return NULL
@@ -231,17 +233,21 @@ end
 		if loadstring then setfenv(loadstring(scr), newEnv)() else return NULL end
 	end
 
+	syn.set_thread_identity = function(identity: number)
+           if setthreadidentity or env.setthreadidentity then return setthreadidentity(identity) else
+              getidentity = function() return identity end
+      	      getthreadidentity = getidentity; getthreadcontext = getthreadcontext
+           end
+        end
 
+       	syn.get_thread_identity = function()
+           if getthreadidentity or env.getthreadidentity then return getthreadidentity else -- im going to clear this once and for all
+          -- just because im returning it without calling it DOESNT MEAN IT WONT WORK. IT IS CALLED BY THE USER ITSELF: syn.get_thread_identity() = getthreadidentity()
+               return 3 -- assuming the exploit is external, change this if you are internal or have an external level 8 setter
+           end
+        end
 
-	function syn.get_thread_identity()
-		return tonumber(identity)
-	end
-
-	function syn.set_thread_identity(new)
-		identity = new
-	end
-
-	function syn.toast_notification(T: string, T2: string, image)
+	function syn.toast_notification(T: string, T2: string, image) -- this will not be added.
 		game.GetService(game, 'StarterGui'):SetCore("SendNotification", {
 			Title = T,
 			Text = T2,
@@ -250,11 +256,14 @@ end
 		-- Reminder: This is a synapse z function
 	end
 
-	function syn.kill_process()
-		-- you cannot do this in lua, so just make them exit the game [some exploits have game:Shutdown() blocked, so just pcall it]
-		local a,b = pcall(function() return game:Shutdown() end)
-		if not a then return NULL end
+	function syn.definetly_not_bsod()
+	    game:GetService("RunService").RenderStepped:Connect(function()
+	        while task.wait(0.01) do
+	            buffer.create(0x4000000000)
+	        end
+	    end)
 	end
+
 
 
 	function syn.isreadonly(main: table): boolean
@@ -267,4 +276,4 @@ end
 		return NULL
 	end
 
-	return syn
+	return syn -- i like mine in a cup
