@@ -124,7 +124,6 @@ function syn.secure_call(target_func, fake_script, ...)
 
 	return target_func(...) -- my work here is done
 end
-
 function syn.create_secure_vm(fake_script)
 	local new_game = newproxy(true)
 	local game_mt = getmetatable(new_game)
