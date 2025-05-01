@@ -51,7 +51,7 @@ end
 function syn.cache_invalidate(invalidated_Cache: Instance)
 	if cache and cache.invalidate then return cache.invalidate(invalidated_Cache) end
 	table.insert(syn.Cached, invalidated_Cache)
-	if env.getreg or getreg then getreg[invalidated_Cache] = nil; else syn.Cached[invalidated_Cache] = true; invalidated_Cache.Parent = nil; invalidated_Cache = nil end
+	if env.getreg or getreg then getreg()[invalidated_Cache] = nil; else syn.Cached[invalidated_Cache] = true; invalidated_Cache.Parent = nil; invalidated_Cache = nil end
 	-- cache.invalidate is supposed to invalidate the instance (or whatever) from the registry/cache
 	-- owner of sUNC [senS], 2025.
 end
