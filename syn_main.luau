@@ -59,7 +59,7 @@ end
 function syn.cache_replace(Cache1: Instance, Cache2: Instance)
 	syn.insert(syn.Cached, Cache1, syn.Cached, Cache2);
 	if cache and cache.replace then return cache.replace(Cache1, Cache2) end
-	if env.getreg or getreg then getreg[Cache1] = getreg[Cache2] else
+	if env.getreg or getreg then getreg()[Cache1] = getreg()[Cache2] else
 		local main = getmetatable(syn.Cached[Cache1]) or syn.Cached[Cache1]
 		local main2 = getmetatable(syn.Cached[Cache2]) or syn.Cached[Cache2]
 
@@ -71,7 +71,7 @@ end
 function syn.cache_iscached(iscached_Cache: Instance)
 	-- Murda Musik (feat. Destroy Lonely)
 	if cache and cache.iscached then return cache.iscached(iscached_Cached) end
-	if env.getreg or getreg then return getreg[iscached_Cached] == nil else
+	if env.getreg or getreg then return getreg()[iscached_Cached] == nil else
 		return syn.Cached[iscached_Cached] == nil
 	end
 
