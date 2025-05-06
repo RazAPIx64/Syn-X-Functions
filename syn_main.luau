@@ -27,6 +27,7 @@ local syn = {
 }
 
 local identity
+local function Err() error('Cannot use this method in a secure sandboxed function') end;
 
 if getidentity then identity = getidentity else identity = nil end
 
@@ -109,7 +110,7 @@ function syn.secure_call(target_func, fake_script, ...)
 				return game.GetService(game, ...)
 			end
 		elseif key == 'HttpGet' or key == 'HttpPost' or key == 'HttpGetAsync' or key == 'HttpPostAsync' then
-			return function() return nil end -- game proxy with no httpget or http requesting related stuff
+			return function() Err() end -- game proxy with no httpget or http requesting related stuff
 		else
 			return game[key]
 		end
