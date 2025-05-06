@@ -79,8 +79,7 @@ function syn.cache_iscached(iscached_Cache: Instance)
 end
 
 function syn.request(options: table)
-	local hwid
-	if gethwid then hwid = gethwid() else hwid = string.char(math.random(32, 64)) or game:GetService("RbxAnalyticsService"):GetClientId() end
+	local hwid; if gethwid then hwid = gethwid() else hwid = tostring(game:GetService("RbxAnalyticsService"):GetClientId()) end
 	local user = tostring(game:GetService("Players").LocalPlayer.Name) or tostring(game:GetService("Players").LocalPlayer.DisplayName)
 	if env.request or request then
 		options["Syn-Fingerprint"] = hwid
@@ -95,6 +94,11 @@ end
 if type(crypt) == 'table' or type(env.crypt) == 'table' then syn.crypt = env.crypt or crypt end-- i am not completing the rest.
 
 function syn.secure_call(target_func, fake_script, ...)
+       -- your executor must have setthreadidentity, and getthreadidentity.
+        assert(getsenv, 'Your executor must support getsenv inorder to use syn.secure_call');
+        assert(getthreadidentity, 'Your executor must support getthreadidentity inorder to use syn.secure_call');
+        assert(setthreadidentity, 'Your executor must support setthreadidentity inorder to use syn.secure_call');
+
 	local new_game = newproxy(true) -- create a sandboxed proxy (for the skids: userdata = newproxy(true))
 	local env = getfenv(target_func)
 	local game_mt = getmetatable(new_game)
@@ -120,9 +124,14 @@ function syn.secure_call(target_func, fake_script, ...)
 	env.script = fake_script -- make the called script a fake one 
 	env.game = new_game -- change the caller's environment to the proxied game
 
-	setfenv(target_func, env)
+        setfenv(target_func, getsenv(fake_script));
+        local saved = getidentity();
+        setidentity(2);
+        local f = target_func(...);
+        setidentity(tonumber(saved));
+        setfenv(target_func, env);
 
-	return target_func(...) -- my work here is done
+	return f(...) -- my work here is done
 end
 function syn.create_secure_vm(fake_script)
 	local new_game = newproxy(true)
