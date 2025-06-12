@@ -1,12 +1,6 @@
 --[[
  Author: RazAPIx64.dll32 or razapix64.dll32 (on Discord)
  Filename: syn_main.luau
-
- Syn-X-Functions © 2025 by RazAPI is licensed under Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0)
-
- You are free to use, distribute, and share the Syn-X-Functions project as long as you provide proper attribution to the original creator. 
- However, you may not modify, remix, or fork this project in any way. Redistribution of the work is only allowed in its original, unaltered form. 
- All users must credit the creator when using the project, and no derivative works or adaptations are permitted.
 ]]
 
 
