@@ -39,7 +39,7 @@ is_synapse_function = is_syn_function
 function syn_isbeta() return syn.is_Beta end
 
 function syn.checkcaller()
-	if env.checkcaller or checkcaller then return env.checkcaller or checkcaller else return NULL end
+	if env.checkcaller or checkcaller then return env.checkcaller() or checkcaller() else return NULL end
 	return NULL
 end
 
