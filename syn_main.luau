@@ -8,53 +8,81 @@
  REQUIREMENTS:
 
  - A level 3-8 internal-external (not possible on external since you need getreg which is implemented internally)
- - 1 byte of ram
 ]]
 
 local syn = {
 	is_Beta = true,
 	Cached = {},
 	insert = function(a, b, c, d)
-		table.insert(a,b)
-		table.insert(c,d)
+		table.insert(a,b);
+		table.insert(c,d); -- why?
 	end,
 }
 
-local identity
+local identity;
 local function Err() error('Cannot use this method in a secure sandboxed function') end;
 
 if getidentity then identity = getidentity else identity = nil end
 
+local function find_from_reg(obj)
+	for i, v in getreg() do
+		if type(v) == 'table' then
+			for m, t in v do
+				if t == obj then
+					return t;
+				end
+			end
+		end
+
+		if v == obj then
+			return obj;
+		end
+	end
+end
+
 syn.__index = syn;
 local NULL = nil
-local env = getfenv()
+local env = getfenv() or getfenv(0);
+
 
 function PROTOSMASHER_LOADED() return syn.is_Beta end -- or return true;
 
 function is_syn_function(func) -- needed for whatever
-   if getrenv or env.getrenv then if getrenv()[func] then return true else return false end end
+   return true;
 end
 
 is_synapse_function = is_syn_function
 function syn_isbeta() return syn.is_Beta end
 
 function syn.checkcaller()
-	if env.checkcaller or checkcaller then return env.checkcaller() or checkcaller() else return NULL end
-	return NULL
+   if checkcaller then
+      return checkcaller();
+   else
+     error('missing function checkcaller for syn.checkcaller', 2);
+   end
 end
 
 function syn.cache_invalidate(invalidated_Cache: Instance)
-	if cache and cache.invalidate then return cache.invalidate(invalidated_Cache) end
-	table.insert(syn.Cached, invalidated_Cache)
-	if env.getreg or getreg then getreg()[invalidated_Cache] = nil; else syn.Cached[invalidated_Cache] = true; invalidated_Cache.Parent = nil; invalidated_Cache = nil end
-	-- cache.invalidate is supposed to invalidate the instance (or whatever) from the registry/cache
-	-- owner of sUNC [senS], 2025.
+	if cache and cache.invalidate then
+		return cache.invalidate(invalidated_Cache);
+	end
+
+	table.insert(syn.Cached, invalidated_Cache);
+	if getreg or env.getreg then
+         local ins = find_from_reg(invalidated_Cache);
+         ins = nil;
+    else  
+            syn.Cached[invalidated_Cache] = true;
+            invalidated_Cache.Parent = nil;
+            invalidated_Cache = nil
+         end
+    end
 end
 
 function syn.cache_replace(Cache1: Instance, Cache2: Instance)
 	syn.insert(syn.Cached, Cache1, syn.Cached, Cache2);
 	if cache and cache.replace then return cache.replace(Cache1, Cache2) end
-	if env.getreg or getreg then getreg()[Cache1] = getreg()[Cache2] else
+	if env.getreg or getreg then find_from_reg(Cache1) = find_from_reg(Cache2) else
 		local main = getmetatable(syn.Cached[Cache1]) or syn.Cached[Cache1]
 		local main2 = getmetatable(syn.Cached[Cache2]) or syn.Cached[Cache2]
 
@@ -66,23 +94,27 @@ end
 function syn.cache_iscached(iscached_Cache: Instance)
 	-- Murda Musik (feat. Destroy Lonely)
 	if cache and cache.iscached then return cache.iscached(iscached_Cached) end
-	if env.getreg or getreg then return getreg()[iscached_Cached] == nil else
+	if env.getreg or getreg then return find_from_reg(iscached_Cache) == nil else
 		return syn.Cached[iscached_Cached] == nil
 	end
 
 	return syn.Cached[iscached_Cached] == nil
 end
 
+syn.is_cached = syn.cache_iscached 
+
 function syn.request(options: table)
 	local hwid; if gethwid then hwid = gethwid() else hwid = tostring(game:GetService("RbxAnalyticsService"):GetClientId()) end
 	local user = tostring(game:GetService("Players").LocalPlayer.Name) or tostring(game:GetService("Players").LocalPlayer.DisplayName)
 	if env.request or request then
-		options["Syn-Fingerprint"] = hwid
-		options["Syn-User-Identifier"] = user
+		options["Syn-Fingerprint"] = hwid;
+		options["Syn-User-Identifier"] = user;
+
 		local success = select(1, pcall(function() options.Header = {["User-Agent"] = "synx v2.1.3b"} end))
 		if not success then local l__ = setmetatable({}, {metatable = 'locked'}) l__ = nil end
 		return (env.request or request)(options)
 	end
+
 	return NULL
 end
 
@@ -90,9 +122,9 @@ if type(crypt) == 'table' or type(env.crypt) == 'table' then syn.crypt = env.cry
 
 function syn.secure_call(target_func, fake_script, ...)
        -- your executor must have setthreadidentity, and getthreadidentity.
-        assert(getsenv, 'Your executor must support getsenv inorder to use syn.secure_call');
-        assert(getthreadidentity, 'Your executor must support getthreadidentity inorder to use syn.secure_call');
-        assert(setthreadidentity, 'Your executor must support setthreadidentity inorder to use syn.secure_call');
+    assert(getsenv, 'Your executor must support getsenv inorder to use syn.secure_call');
+    assert(getthreadidentity, 'Your executor must support getthreadidentity inorder to use syn.secure_call');
+    assert(setthreadidentity, 'Your executor must support setthreadidentity inorder to use syn.secure_call');
 
 	local new_game = newproxy(true) -- create a sandboxed proxy (for the skids: userdata = newproxy(true))
 	local env = getfenv(target_func)
@@ -196,7 +228,12 @@ function syn.create_secure_function(arg)
 end
 
 	function syn.queue_on_teleport(scr)
-		local r = getfenv()
+		local r = getfenv();
+
+        if queueonteleport or env.queueonteleport or queue_on_teleport then
+             queue_on_teleport(scr);
+        end
+
 		game:GetService("Players").LocalPlayer.OnTeleport:Connect(function(State)
 			if State == Enum.TeleportState.Started then
 				scr = scr:gsub("%s*([%w_]+)%s*%.%s*([%w_]+)", function(k, n)
@@ -206,6 +243,7 @@ end
 					end
 					return k .. "." .. n
 				end)
+
 				local after_teleport = syn.create_secure_function(function(__)
 					return __
 				end)
@@ -216,12 +254,12 @@ end
 	end
 
 	function syn.is_luau()
-		return _VERSION == 'Luau'
+		return _VERSION == 'Luau' -- are we srs
 	end
 
 	function syn.secrun(scr)
 		local environment = getfenv()
-		local newEnv = setmetatable({}, {
+		local new_env = setmetatable({}, {
 			__index = function(t, key)
 				if key == "game" then
 					return game
@@ -233,7 +271,7 @@ end
 			end
 		})
 
-		if loadstring then setfenv(loadstring(scr), newEnv)() else return NULL end
+		if loadstring then setfenv(loadstring(scr), new_env)() else return NULL end
 	end
 
 	syn.set_thread_identity = function(identity: number)
@@ -244,7 +282,7 @@ end
         end
 
        	syn.get_thread_identity = function()
-           if getthreadidentity or env.getthreadidentity then return getthreadidentity else -- im going to clear this once and for all
+           if getthreadidentity or env.getthreadidentity then return getthreadidentity(); else -- im going to clear this once and for all
           -- just because im returning it without calling it DOESNT MEAN IT WONT WORK. IT IS CALLED BY THE USER ITSELF: syn.get_thread_identity() = getthreadidentity()
                return 3 -- assuming the exploit is external, change this if you are internal or have an external level 8 setter
            end
