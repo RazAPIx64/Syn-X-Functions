@@ -86,7 +86,7 @@ if hookmetamethod then
         end
 
         function syn.unprotect_gui(gui: ScreenGui | Instance)
-            assert(Protected[gui] != nil, "This Instance isn't protected with syn.protect_gui.")
+            assert(Protected[gui] ~= nil, "This Instance isn't protected with syn.protect_gui.")
             table.remove(Protected, gui or table.find(Protected, gui));
 
             for i,v in gui:GetDescendants() do
@@ -209,7 +209,7 @@ function syn.secure_call(target_func, fake_script, ...)
     assert(setthreadidentity, 'Your executor must support setthreadidentity inorder to use syn.secure_call');
 
     getfenv(target_func).getgenv = nil;
-    getfenv(target_func).getfenv = function return getfenv(0) end
+    getfenv(target_func).getfenv = function() return getfenv(0) end
 
     setfenv(target_func, getsenv(fake_script));
     local saved = getidentity();
@@ -269,7 +269,7 @@ function syn.toast_notification(T: string, T2: string, image) -- this will not b
 		Title = T,
 		Text = T2,
 		Icon = image or nil
-    }
+    })
 end
 
 	-- function syn.definetly_not_bsod()
