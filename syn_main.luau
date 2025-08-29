@@ -12,6 +12,7 @@
 
 local syn = {}
 local cached = {}
+local Protected = {}
 
 local identity;
 local function Err() error('Cannot use this method in a secure sandboxed function') end;
@@ -48,12 +49,54 @@ end
 
 function PROTOSMASHER_LOADED() return true end -- or return true;
 
-function is_syn_function(func) -- needed for whatever
-   return true;
-end
-
+is_syn_function = PROTOSMASHER_LOADED
 is_synapse_function = is_syn_function
-function syn_isbeta() return true end
+syn_isbeta = PROTOSMASHER_LOADED
+
+syn.protect_gui = false;
+
+if hookmetamethod then
+    if getnamecallmethod and checkcaller then
+        local ProtectHook; ProtectHook = hookmetamethod(game, '__namecall', function(...)
+            local Args = {...};
+            if not checkcaller() and Args[1] == game and getnamecallmethod() == 'FindFirstChild' and Args[3] == true then
+                for i,v in Protected do
+                    if v.Name == Args[2] then
+                        return nil
+                    end
+                end
+            end
+        end)
+
+        function syn.protect_gui(gui: ScreenGui | Instance)
+            table.insert(Protected, gui);
+
+            for i,v in gui:GetDescendants() do
+                table.insert(Protected, v);
+            end
+
+            local Connection; -- ts method so buns bro
+            Connection = gui.DescendantAdded:Connect(function(Descendant)
+                if Protected[Descendant] ~= nil and table.find(Protected, Descendant) then
+                    table.insert(Protected, Descendant)
+                else
+                    Connection:Disconnect();
+                end
+            end)
+        end
+
+        function syn.unprotect_gui(gui: ScreenGui | Instance)
+            assert(Protected[gui] != nil, "This Instance isn't protected with syn.protect_gui.")
+            table.remove(Protected, gui or table.find(Protected, gui));
+
+            for i,v in gui:GetDescendants() do
+                if Protected[v] ~= nil or table.find(Protected, v) then
+                    table.remove(Protected, v or table.find(Protected, v))
+                end
+            end
+        end
+    end
+end
 
 function syn.checkcaller()
     if checkcaller then return checkcaller() end
@@ -212,7 +255,8 @@ syn.set_thread_identity = function(identity: number)
         return
     end
 
-    getidentity = function() return identity end
+    --getidentity = function() return identity end
+    --useless because it's in this function's environment, not the global environment
 end
 
 syn._getthreadidentity = function(): number
